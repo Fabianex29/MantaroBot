@@ -35,6 +35,10 @@ public class EmbedJSON {
     public String thumbnail;
     public String title, titleUrl;
 
+    public MessageEmbed gen() {
+        return gen(null);
+    }
+
     public MessageEmbed gen(Member member) {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         if (title != null) embedBuilder.setTitle(title, titleUrl);

@@ -156,6 +156,7 @@ public class MantaroCore {
         return this;
     }
 
+    @SuppressWarnings("deprecation")
     private void startShardedInstance() {
         loadState = LOADING;
 
@@ -205,7 +206,8 @@ public class MantaroCore {
                     .setActivity(Activity.playing("Hold on to your seatbelts!"));
 
             //TODO: Uncomment this when we can actually handle intents: half of the bot breaks without proper chunking.
-            /*var builder = DefaultShardManagerBuilder.create(config.token,
+            /*
+            var builder = DefaultShardManagerBuilder.create(config.token,
                     GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MESSAGE_REACTIONS,
                     GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_BANS
             ).setSessionController(controller)
@@ -225,7 +227,8 @@ public class MantaroCore {
                     .setDisabledCacheFlags(EnumSet.of(CacheFlag.ACTIVITY, CacheFlag.EMOTE, CacheFlag.CLIENT_STATUS))
                     .setMemberCachePolicy(MemberCachePolicy.ONLINE)
                     //.setChunkingFilter(ChunkingFilter.NONE)
-                    .setActivity(Activity.playing("Hold on to your seatbelts!"));*/
+                    .setActivity(Activity.playing("Hold on to your seatbelts!"));
+            */
             if (isDebug) {
                 builder.setShardsTotal(2)
                         .setCallbackPool(Executors.newFixedThreadPool(1, callbackThreadFactory), true)

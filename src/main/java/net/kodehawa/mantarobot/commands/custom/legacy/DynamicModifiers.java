@@ -107,6 +107,15 @@ public class DynamicModifiers extends LinkedHashMap<String, String> {
                 .mapMember(k(prefix, "user"), event.getMember());
     }
 
+    public DynamicModifiers mapFromJoinLeave(String prefix, TextChannel channel, User user, Guild guild) {
+        return this
+                .set(prefix, user.getName() + "@" + guild.getName())
+                .mapGuild(k(prefix, "guild"), guild)
+                .mapMember(k(prefix, "me"), guild.getSelfMember())
+                .mapUser(k(prefix, "user"), user)
+                .mapChannel("channel", channel);
+    }
+
     public DynamicModifiers mapEvent(String prefix, GenericGuildEvent event) {
         return this
                 .mapGuild(k(prefix, "guild"), event.getGuild())

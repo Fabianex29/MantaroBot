@@ -34,7 +34,7 @@ import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.api.events.guild.GuildUnbanEvent;
 import net.dv8tion.jda.api.events.guild.member.GenericGuildMemberEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent;
 import net.dv8tion.jda.api.events.http.HttpRequestEvent;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageDeleteEvent;
@@ -186,8 +186,8 @@ public class MantaroListener implements EventListener {
             return;
         }
 
-        if (event instanceof GuildMemberLeaveEvent) {
-            threadPool.execute(() -> onUserLeave((GuildMemberLeaveEvent) event));
+        if (event instanceof GuildMemberRemoveEvent) {
+            threadPool.execute(() -> onUserLeave((GuildMemberRemoveEvent) event));
             return;
         }
 
@@ -703,7 +703,7 @@ public class MantaroListener implements EventListener {
             }
 
             String joinMessage = data.getJoinMessage();
-            sendJoinLeaveMessage(event, data.getExtraJoinMessages(), joinMessage, joinChannel);
+            sendJoinLeaveMessage(event.getUser(), event.getGuild(), event.getGuild().getTextChannelById(joinChannel), data.getExtraLeaveMessages(), joinMessage);
             actions.labels("join_messages").inc();
         } catch (Exception e) {
             SentryHelper.captureExceptionContext("Failed to send user join message!", e, MantaroListener.class, "Join Handler");
@@ -711,7 +711,7 @@ public class MantaroListener implements EventListener {
         }
     }
 
-    private void onUserLeave(GuildMemberLeaveEvent event) {
+    private void onUserLeave(GuildMemberRemoveEvent event) {
         DBGuild dbg = MantaroData.db().getGuild(event.getGuild());
         GuildData data = dbg.getData();
 
@@ -746,7 +746,7 @@ public class MantaroListener implements EventListener {
             }
 
             String leaveMessage = data.getLeaveMessage();
-            sendJoinLeaveMessage(event, data.getExtraLeaveMessages(), leaveMessage, leaveChannel);
+            sendJoinLeaveMessage(event.getUser(), event.getGuild(), event.getGuild().getTextChannelById(leaveChannel), data.getExtraLeaveMessages(), leaveMessage);
             actions.labels("leave_messages").inc();
         } catch (Exception e) {
             SentryHelper.captureExceptionContext("Failed to send user leave message!", e, MantaroListener.class, "Join Handler");
@@ -754,23 +754,17 @@ public class MantaroListener implements EventListener {
         }
     }
 
-    private void sendJoinLeaveMessage(GenericGuildMemberEvent event, List<String> extraMessages, String msg, String channel) {
+    private void sendJoinLeaveMessage(User user, Guild guild, TextChannel tc, List<String> extraMessages, String msg) {
         int select = extraMessages.isEmpty() ? 0 : rand.nextInt(extraMessages.size());
         String message = rand.nextBoolean() ? msg : extraMessages.isEmpty() ? msg : extraMessages.get(select);
-
-        if (channel != null && message != null) {
-            TextChannel tc = event.getGuild().getTextChannelById(channel);
-            if (tc == null) {
-                return;
-            }
-
+        if (tc != null && message != null) {
             if (!tc.canTalk()) {
                 return;
             }
 
             if (message.contains("$(")) {
                 message = new DynamicModifiers()
-                        .mapEvent("event", event)
+                        .mapFromJoinLeave("event", tc, user, guild)
                         .resolve(message);
             }
 
@@ -798,7 +792,7 @@ public class MantaroListener implements EventListener {
                     }
 
                     MessageBuilder builder = new MessageBuilder()
-                            .setEmbed(embed.gen(event.getMember()));
+                            .setEmbed(embed.gen());
 
                     if (!r.isEmpty())
                         builder.append(r);
